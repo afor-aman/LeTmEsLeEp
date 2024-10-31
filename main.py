@@ -1,3 +1,5 @@
+#todo: now implement the automation script
+
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,

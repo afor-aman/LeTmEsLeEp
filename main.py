@@ -22,7 +22,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 import sys
-from printer_thread import PrinterThread
+from utils.printer_thread import PrinterThread
 
 
 class HelpDialog(QDialog):
@@ -350,7 +350,7 @@ class SettingsUI(QMainWindow):
         self.sequence_timer.setInterval(500)  # 500 ms to reset the sequence
         self.sequence_timer.timeout.connect(self.reset_key_sequence)
         
-        emergency_note = QLabel("Press Ctrl+K+L to terminate the application immediately.")
+        emergency_note = QLabel("Press Ctrl+K+L for emergency stop.")
         emergency_note.setStyleSheet("color: #AAAAAA; font-size: 12.5pt;")  # Style to match UI
         emergency_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(emergency_note)  # Add the n
@@ -456,20 +456,29 @@ class SettingsUI(QMainWindow):
             self.min_delay_input,
             self.max_delay_input,
             self.min_tab_change_input,
-            self.max_tab_change_input,
+            self.max_tab_change_input
         ]
 
         for input_field in inputs:
             value = input_field.text()
             if value:  # Only validate if there's something entered
                 try:
-                    # Attempt to convert to float (works for int and double as well)
-                    float(value)
+                    num_value = float(value)  # Convert to float
+                    # Validate min/max delays (1 ms to 10,000 ms)
+                    if input_field in [self.min_mouse_delay_input, self.max_mouse_delay_input,
+                                       self.min_delay_input, self.max_delay_input,
+                                       self.min_tab_change_input, self.max_tab_change_input]:
+                        if num_value < 1 or num_value > 10000:  # Validate min/max delay
+                            self.show_warning("The delay must be between 1 ms and 10,000 ms.")
+                            input_field.clear()  # Clear the invalid input
+                    # Validate WPM (max 50)
+                    elif input_field == self.wpm_input:
+                        if num_value > 50:  # Validate WPM
+                            self.show_warning("WPM must not exceed 50.")
+                            input_field.clear()  # Clear the invalid input
                 except ValueError:
                     # Show a warning message if conversion fails
-                    self.show_warning(
-                        f"The entered value '{value}' is not a valid number."
-                    )
+                    self.show_warning(f"The entered value '{value}' is not a valid number.")
                     input_field.clear()  # Clear the invalid input
 
     def show_warning(self, message):
@@ -483,8 +492,7 @@ class SettingsUI(QMainWindow):
         # Apply stylesheet for black text in the message box
         msg_box.setStyleSheet("""
             QLabel {
-                color: black;  /* Set text color to black */
-                font-size: 12pt;
+                font-size: 12.5pt;
             }
             QPushButton {
                 background-color: rgba(70, 130, 180, 200);

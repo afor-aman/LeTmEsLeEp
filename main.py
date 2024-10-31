@@ -96,15 +96,14 @@ class HelpDialog(QDialog):
 
         self.setLayout(layout)
 
-
 class SettingsUI(QMainWindow):
     def __init__(self):
         super().__init__()
 
         # Set up the main window
         self.setWindowTitle("Settings")
-        self.setGeometry(100, 100, 500, 400)
-        self.setFixedSize(500, 720)
+        self.setGeometry(100, 100, 500, 750)
+        self.setFixedSize(510, 750)
 
         # Apply a dark and glassy style
         self.setStyleSheet(
@@ -350,6 +349,11 @@ class SettingsUI(QMainWindow):
         self.sequence_timer = QTimer(self)
         self.sequence_timer.setInterval(500)  # 500 ms to reset the sequence
         self.sequence_timer.timeout.connect(self.reset_key_sequence)
+        
+        emergency_note = QLabel("Press Ctrl+K+L to terminate the application immediately.")
+        emergency_note.setStyleSheet("color: #AAAAAA; font-size: 12.5pt;")  # Style to match UI
+        emergency_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(emergency_note)  # Add the n
 
     def keyPressEvent(self, event):
         """Override to handle key sequence for emergency stop (Ctrl+K+L)."""
@@ -491,7 +495,6 @@ class SettingsUI(QMainWindow):
         """)
 
         msg_box.exec()  # Show the message box
-
 
 
 if __name__ == "__main__":

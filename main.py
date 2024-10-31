@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QPushButton,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
 import sys
@@ -345,6 +345,52 @@ class SettingsUI(QMainWindow):
 
         # Initialize the printer thread
         self.printer_thread = None
+        
+        self.key_sequence = []
+        self.sequence_timer = QTimer(self)
+        self.sequence_timer.setInterval(500)  # 500 ms to reset the sequence
+        self.sequence_timer.timeout.connect(self.reset_key_sequence)
+
+    def keyPressEvent(self, event):
+        """Override to handle key sequence for emergency stop (Ctrl+K+L)."""
+        key = event.key()
+
+        # Track if Ctrl is pressed, followed by K, then L
+        if key == Qt.Key.Key_Control and not self.key_sequence:
+            self.key_sequence.append("Ctrl")
+        elif key == Qt.Key.Key_K and "Ctrl" in self.key_sequence and "K" not in self.key_sequence:
+            self.key_sequence.append("K")
+        elif key == Qt.Key.Key_L and "K" in self.key_sequence:
+            self.key_sequence.append("L")
+            # If sequence Ctrl+K+L is complete, stop the app
+            if self.key_sequence == ["Ctrl", "K", "L"]:
+                self.emergency_stop()
+                return
+
+        # Restart the timer to check for sequence timeout
+        self.sequence_timer.start()
+
+    def keyReleaseEvent(self, event):
+        """Override to handle key release (reset if Ctrl is released)."""
+        if event.key() == Qt.Key.Key_Control:
+            self.reset_key_sequence()
+
+    def reset_key_sequence(self):
+        """Reset the key sequence and stop the timer."""
+        self.key_sequence.clear()
+        self.sequence_timer.stop()
+
+    def emergency_stop(self):
+        """Terminate the application safely on emergency shortcut."""
+        self.reset_key_sequence()
+        
+        # Stop any active threads or resources
+        if self.printer_thread and self.printer_thread.isRunning():
+            self.printer_thread.stop()  # Safely stop the thread
+            self.printer_thread.wait()  # Wait for it to finish
+
+        # Close the application gracefully
+        QApplication.quit()
 
     def show_help(self, event):
         """Show the help dialog when the help icon is clicked."""

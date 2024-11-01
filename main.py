@@ -18,13 +18,20 @@ from PyQt6.QtWidgets import (
     QDialog,
     QTextEdit,
     QVBoxLayout,
-    QPushButton
+    QPushButton,
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QPainter
 from PyQt6.QtSvg import QSvgRenderer
-import sys
 from utils.printer_thread import PrinterThread
+import os
+import sys
+
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 
 class HelpDialog(QDialog):
@@ -98,6 +105,7 @@ class HelpDialog(QDialog):
 
         self.setLayout(layout)
 
+
 class TextInputDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -149,6 +157,7 @@ class TextInputDialog(QDialog):
     def get_input_text(self):
         """Return the entered text."""
         return self.text_edit.toPlainText()
+
 
 class SettingsUI(QMainWindow):
     def __init__(self):
@@ -215,8 +224,9 @@ class SettingsUI(QMainWindow):
 
         # Help Button
         self.help_icon_label = QLabel()
+        help_icon_path = self.get_icon_resource_path("icons/help.svg")
         self.load_svg_icon_help(
-            "./icons/help.svg", self.help_icon_label
+            help_icon_path, self.help_icon_label
         )  # Load the help SVG icon
         self.help_icon_label.mousePressEvent = (
             self.show_help
@@ -232,7 +242,8 @@ class SettingsUI(QMainWindow):
 
         # Load SVG icon for Mouse Settings
         self.mouse_icon_label = QLabel()
-        self.load_svg_icon("./icons/mouse.svg", self.mouse_icon_label)
+        mouse_icon_path = self.get_icon_resource_path("icons/mouse.svg")
+        self.load_svg_icon(mouse_icon_path, self.mouse_icon_label)
         mouse_layout.addWidget(self.mouse_icon_label, 0, 0, 1, 1)
 
         # Mouse Settings Label
@@ -283,7 +294,8 @@ class SettingsUI(QMainWindow):
 
         # Load SVG icon for Keyboard Settings
         self.keyboard_icon_label = QLabel()
-        self.load_svg_icon("./icons/keyboard.svg", self.keyboard_icon_label)
+        keyboard_icon_path = self.get_icon_resource_path("icons/keyboard.svg")
+        self.load_svg_icon(keyboard_icon_path, self.keyboard_icon_label)
         keyboard_layout.addWidget(self.keyboard_icon_label, 0, 0, 1, 1)
 
         # Keyboard Settings Label
@@ -318,7 +330,7 @@ class SettingsUI(QMainWindow):
         self.max_delay_input.textChanged.connect(
             self.validate_input
         )  # Validate on text change
-        
+
         self.randomize_keystrokes_checkbox = QCheckBox("Randomize typing text")
         keyboard_layout.addWidget(self.randomize_keystrokes_checkbox, 4, 0, 1, 2)
 
@@ -347,7 +359,8 @@ class SettingsUI(QMainWindow):
 
         # Load SVG icon for Tab Change Settings
         self.tab_change_icon_label = QLabel()
-        self.load_svg_icon("./icons/tabs.svg", self.tab_change_icon_label)
+        tabs_icon_path = self.get_icon_resource_path("icons/tabs.svg")
+        self.load_svg_icon(tabs_icon_path, self.tab_change_icon_label)
         tab_change_layout.addWidget(self.tab_change_icon_label, 0, 0, 1, 1)
 
         # Tab Change Settings Label
@@ -406,15 +419,17 @@ class SettingsUI(QMainWindow):
 
         # Initialize the printer thread
         self.printer_thread = None
-        
+
         self.key_sequence = []
         self.sequence_timer = QTimer(self)
         self.sequence_timer.setInterval(500)  # 500 ms to reset the sequence
         self.sequence_timer.timeout.connect(self.reset_key_sequence)
-        
+
         emergency_note = QLabel("Press Ctrl+K+L or CMD+K+L for emergency stop.")
 
-        emergency_note.setStyleSheet("color: #AAAAAA; font-size: 12.5pt;")  # Style to match UI
+        emergency_note.setStyleSheet(
+            "color: #AAAAAA; font-size: 12.5pt;"
+        )  # Style to match UI
         emergency_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(emergency_note)  # Add the n
 
@@ -425,7 +440,11 @@ class SettingsUI(QMainWindow):
         # Track if Ctrl is pressed, followed by K, then L
         if key == Qt.Key.Key_Control and not self.key_sequence:
             self.key_sequence.append("Ctrl")
-        elif key == Qt.Key.Key_K and "Ctrl" in self.key_sequence and "K" not in self.key_sequence:
+        elif (
+            key == Qt.Key.Key_K
+            and "Ctrl" in self.key_sequence
+            and "K" not in self.key_sequence
+        ):
             self.key_sequence.append("K")
         elif key == Qt.Key.Key_L and "K" in self.key_sequence:
             self.key_sequence.append("L")
@@ -450,7 +469,7 @@ class SettingsUI(QMainWindow):
     def emergency_stop(self):
         """Terminate the application safely on emergency shortcut."""
         self.reset_key_sequence()
-        
+
         # Stop any active threads or resources
         if self.printer_thread and self.printer_thread.isRunning():
             self.printer_thread.stop()  # Safely stop the thread
@@ -519,7 +538,7 @@ class SettingsUI(QMainWindow):
             self.min_delay_input,
             self.max_delay_input,
             self.min_tab_change_input,
-            self.max_tab_change_input
+            self.max_tab_change_input,
         ]
 
         for input_field in inputs:
@@ -528,11 +547,18 @@ class SettingsUI(QMainWindow):
                 try:
                     num_value = float(value)  # Convert to float
                     # Validate min/max delays (1 ms to 10,000 ms)
-                    if input_field in [self.min_mouse_delay_input, self.max_mouse_delay_input,
-                                       self.min_delay_input, self.max_delay_input,
-                                       self.min_tab_change_input, self.max_tab_change_input]:
+                    if input_field in [
+                        self.min_mouse_delay_input,
+                        self.max_mouse_delay_input,
+                        self.min_delay_input,
+                        self.max_delay_input,
+                        self.min_tab_change_input,
+                        self.max_tab_change_input,
+                    ]:
                         if num_value < 1 or num_value > 10000:  # Validate min/max delay
-                            self.show_warning("The delay must be between 1 ms and 10,000 ms.")
+                            self.show_warning(
+                                "The delay must be between 1 ms and 10,000 ms."
+                            )
                             input_field.clear()  # Clear the invalid input
                     # Validate WPM (max 50)
                     elif input_field == self.wpm_input:
@@ -541,7 +567,9 @@ class SettingsUI(QMainWindow):
                             input_field.clear()  # Clear the invalid input
                 except ValueError:
                     # Show a warning message if conversion fails
-                    self.show_warning(f"The entered value '{value}' is not a valid number.")
+                    self.show_warning(
+                        f"The entered value '{value}' is not a valid number."
+                    )
                     input_field.clear()  # Clear the invalid input
 
     def show_warning(self, message):
@@ -553,7 +581,8 @@ class SettingsUI(QMainWindow):
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
         # Apply stylesheet for black text in the message box
-        msg_box.setStyleSheet("""
+        msg_box.setStyleSheet(
+            """
             QLabel {
                 font-size: 12.5pt;
             }
@@ -563,7 +592,8 @@ class SettingsUI(QMainWindow):
                 padding: 8px;
                 border-radius: 4px;
             }
-        """)
+        """
+        )
 
         msg_box.exec()  # Show the message box
 
@@ -573,8 +603,12 @@ class SettingsUI(QMainWindow):
         if text_input_dialog.exec() == QDialog.DialogCode.Accepted:
             # Retrieve and process the entered text
             user_text = text_input_dialog.get_input_text()
-            print(f"User entered text: {user_text}") 
-            
+            print(f"User entered text: {user_text}")
+
+    def get_icon_resource_path(self,icon):
+        return resource_path(icon)
+        
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = SettingsUI()

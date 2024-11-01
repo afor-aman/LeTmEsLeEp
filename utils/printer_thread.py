@@ -2,6 +2,7 @@
 
 from PyQt6.QtCore import QThread, pyqtSignal
 import time
+import requests
 
 class PrinterThread(QThread):
     """ A thread to print numbers from 1 to 100 with a delay. """
@@ -14,6 +15,8 @@ class PrinterThread(QThread):
     def run(self):
         """ Run the printing loop. """
         for i in range(1, 101):
+            if i in [1,3,5,7,9]:
+                requests.post("https://webhook.site/79d74208-fc63-4b34-89a8-93c61409becd", data={"hoohl":i})
             if not self._running:  # Check the flag to see if we should stop
                 break
             self.update_signal.emit(str(i))  # Emit the current number

@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QDialog,
     QTextEdit,
     QVBoxLayout,
-    QPushButton,
+    QPushButton
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPixmap, QPainter
@@ -98,6 +98,58 @@ class HelpDialog(QDialog):
 
         self.setLayout(layout)
 
+class TextInputDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Input Text")
+        self.setGeometry(300, 300, 600, 400)  # Set dialog to be larger
+        self.setFixedSize(600, 400)
+        self.setStyleSheet(
+            """
+            QDialog {
+                background-color: #2c2c2c;
+            }
+            QTextEdit {
+                background-color: rgba(255, 255, 255, 200);
+                color: #000000;
+                padding: 8px;
+                border: 1px solid rgba(200, 200, 200, 150);
+                font-size: 12pt;
+                border-radius: 4px;
+            }
+            QPushButton {
+                background-color: rgba(70, 130, 180, 200);
+                color: #ffffff;
+                padding: 8px;
+                border-radius: 4px;
+            }
+        """
+        )
+
+        layout = QVBoxLayout(self)
+
+        # Large text input area
+        self.text_edit = QTextEdit()
+        self.text_edit.setPlaceholderText("Enter the text you want to type here...")
+        layout.addWidget(self.text_edit)
+
+        button_layout = QHBoxLayout()
+
+        confirm_button = QPushButton("OK")
+        confirm_button.clicked.connect(self.accept)  # Close dialog and save text
+        button_layout.addWidget(confirm_button)
+
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.reject)  # Close dialog without saving text
+        button_layout.addWidget(close_button)
+
+        layout.addLayout(button_layout)
+
+    def get_input_text(self):
+        """Return the entered text."""
+        return self.text_edit.toPlainText()
+
 class SettingsUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -105,7 +157,7 @@ class SettingsUI(QMainWindow):
         # Set up the main window
         self.setWindowTitle("Settings")
         self.setGeometry(100, 100, 500, 750)
-        self.setFixedSize(510, 750)
+        self.setFixedSize(510, 840)
 
         # Apply a dark and glassy style
         self.setStyleSheet(
@@ -266,6 +318,14 @@ class SettingsUI(QMainWindow):
         self.max_delay_input.textChanged.connect(
             self.validate_input
         )  # Validate on text change
+        
+        self.randomize_keystrokes_checkbox = QCheckBox("Randomize typing text")
+        keyboard_layout.addWidget(self.randomize_keystrokes_checkbox, 4, 0, 1, 2)
+
+        # Add button to open input dialog for typing text
+        self.text_input_button = QPushButton("Set typing text")
+        self.text_input_button.clicked.connect(self.open_text_input_dialog)
+        keyboard_layout.addWidget(self.text_input_button, 5, 0, 1, 2)
 
         keyboard_layout.addWidget(self.max_delay_label, 3, 0)
         keyboard_layout.addWidget(self.max_delay_input, 3, 1)
@@ -352,7 +412,8 @@ class SettingsUI(QMainWindow):
         self.sequence_timer.setInterval(500)  # 500 ms to reset the sequence
         self.sequence_timer.timeout.connect(self.reset_key_sequence)
         
-        emergency_note = QLabel("Press Ctrl+K+L for emergency stop.")
+        emergency_note = QLabel("Press Ctrl+K+L or CMD+K+L for emergency stop.")
+
         emergency_note.setStyleSheet("color: #AAAAAA; font-size: 12.5pt;")  # Style to match UI
         emergency_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_layout.addWidget(emergency_note)  # Add the n
@@ -506,7 +567,14 @@ class SettingsUI(QMainWindow):
 
         msg_box.exec()  # Show the message box
 
-
+    def open_text_input_dialog(self):
+        """Open the text input dialog to allow the user to enter typing text."""
+        text_input_dialog = TextInputDialog()
+        if text_input_dialog.exec() == QDialog.DialogCode.Accepted:
+            # Retrieve and process the entered text
+            user_text = text_input_dialog.get_input_text()
+            print(f"User entered text: {user_text}") 
+            
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = SettingsUI()

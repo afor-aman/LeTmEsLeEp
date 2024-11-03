@@ -43,6 +43,8 @@ class HumanInteractionMimicker:
                 for word in sentence.split():
                     if self.stop_event.is_set():
                         break
+                    self.typing_thread_stopped_event.wait()  # Wait until typing is allowed
+
                     pyautogui.typewrite(word, interval=self.random_typing_speed())  # Type each word
                     time.sleep(random.uniform(0.5, 1.5))  # Delay between typing words
                 

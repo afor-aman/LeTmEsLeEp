@@ -1,3 +1,4 @@
 venv
 .DS_Store
 temp_kachra.py
+utils/__pycache__
